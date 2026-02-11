@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mystic Tarot · 黑金塔罗</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+SC:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orbit bg-orbit-1"></div>
+    <div class="bg-orbit bg-orbit-2"></div>
+
+    <main>
+      <section id="question-screen" class="panel active">
+        <h1 class="title glow">你想要问什么问题？</h1>
+        <p class="subtitle">在心中专注你的疑问，命运将通过牌阵回应你。</p>
+        <label class="input-label" for="question-input">问题</label>
+        <textarea
+          id="question-input"
+          rows="4"
+          maxlength="300"
+          placeholder="例如：我接下来三个月在事业上的关键机会是什么？"
+        ></textarea>
+
+        <div class="draw-count-wrap" role="radiogroup" aria-label="抽牌数量">
+          <span>抽牌数量：</span>
+          <label><input type="radio" name="draw-count" value="3" checked />3 张</label>
+          <label><input type="radio" name="draw-count" value="4" />4 张</label>
+          <label><input type="radio" name="draw-count" value="5" />5 张</label>
+        </div>
+
+        <button id="start-btn" class="gold-btn">开始抽卡</button>
+      </section>
+
+      <section id="draw-screen" class="panel">
+        <header class="draw-header">
+          <h2>漂浮信使发牌中</h2>
+          <p id="status-text">正在打乱并铺开 78 张塔罗牌…</p>
+        </header>
+
+        <div class="play-area">
+          <div id="deck-viewport" class="deck-viewport" aria-label="漂浮塔罗牌阵">
+            <div id="deck-canvas" class="deck-canvas"></div>
+          </div>
+          <aside class="gesture-panel">
+            <h3>手势控制</h3>
+            <ul>
+              <li>✋ 左右滑动手掌：浏览牌阵</li>
+              <li>☝️ 指尖对准卡片：选中目标牌</li>
+              <li>⬆️ 向上滑动：抽出当前牌</li>
+            </ul>
+            <p id="gesture-state">摄像头状态：待启动</p>
+            <video id="camera" autoplay muted playsinline></video>
+          </aside>
+        </div>
+
+        <div class="selected-wrap">
+          <h3>已抽取卡牌 (<span id="selected-count">0</span>)</h3>
+          <div id="selected-cards" class="selected-cards"></div>
+        </div>
+
+        <button id="finish-btn" class="gold-btn" disabled>生成解读</button>
+
+        <article id="reading-result" class="reading-result hidden">
+          <h3>你的塔罗解读</h3>
+          <p id="reading-question"></p>
+          <div id="reading-cards"></div>
+          <p id="reading-text"></p>
+        </article>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
