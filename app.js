@@ -270,7 +270,7 @@ function handlePalmSwipe(currentX) {
   const deadZone = 0.005;
 
   if (Math.abs(diff) > deadZone) {
-    const speed = Math.max(-140, Math.min(140, diff * 2600));
+    const speed = Math.max(-140, Math.min(140, diff * -2600));
     browseDeck(speed);
   }
 
@@ -312,7 +312,7 @@ function handleUpSwipe(currentY) {
 
   const now = Date.now();
   const diff = state.lastFingerY - currentY;
-  if (diff > 0.11 && now - state.lastUpSwipeAt > 550) {
+  if (diff > 0.17 && now - state.lastUpSwipeAt > 900) {
     if (state.lockedCardId !== null) {
       pullCard(state.lockedCardId);
     } else if (state.pointedCardId !== null) {
