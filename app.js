@@ -267,10 +267,10 @@ function handlePalmSwipe(currentX) {
   }
 
   const diff = currentX - state.lastPalmX;
-  const deadZone = 0.008;
+  const deadZone = 0.005;
 
   if (Math.abs(diff) > deadZone) {
-    const speed = Math.max(-95, Math.min(95, diff * -1800));
+    const speed = Math.max(-140, Math.min(140, diff * 2600));
     browseDeck(speed);
   }
 
