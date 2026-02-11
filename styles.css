@@ -182,7 +182,12 @@ textarea:focus-visible {
   font-size: 1.55rem;
 }
 
-.card.selected {
+.card.pointed {
+  border-color: #7cd8ff;
+  box-shadow: 0 0 0 2px rgba(124, 216, 255, 0.5), 0 0 16px rgba(124, 216, 255, 0.3);
+}
+
+.card.locked {
   border-color: #fbe38d;
   box-shadow: 0 0 0 2px rgba(251, 227, 141, 0.45), 0 0 22px rgba(212, 175, 55, 0.4);
 }

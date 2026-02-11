@@ -27,7 +27,8 @@ const state = {
   question: '',
   drawCount: 3,
   selectedCards: [],
-  selectedCardId: null,
+  pointedCardId: null,
+  lockedCardId: null,
   dealt: false,
   viewportOffset: 0,
   maxOffset: 0,
@@ -79,7 +80,8 @@ function startExperience() {
 function dealAllCards() {
   deckCanvasEl.innerHTML = '';
   state.selectedCards = [];
-  state.selectedCardId = null;
+  state.pointedCardId = null;
+  state.lockedCardId = null;
   state.dealt = false;
   state.viewportOffset = 0;
   finishBtn.disabled = true;
@@ -109,8 +111,13 @@ function dealAllCards() {
     card.title = name;
 
     card.addEventListener('click', () => {
-      selectCard(card.dataset.id);
-      pullCard(card.dataset.id);
+      const cardId = card.dataset.id;
+      setPointedCard(cardId);
+      if (state.lockedCardId === cardId) {
+        pullCard(cardId);
+      } else {
+        lockCard(cardId);
+      }
     });
 
     deckCanvasEl.appendChild(card);
@@ -120,7 +127,7 @@ function dealAllCards() {
 
   setTimeout(() => {
     state.dealt = true;
-    statusText.textContent = `请浏览牌阵并抽出 ${state.drawCount} 张牌。`;
+    statusText.textContent = `请先指向卡牌，再上滑一次锁定，上滑第二次抽出（共 ${state.drawCount} 张）。`;
   }, 1600);
 }
 
@@ -140,14 +147,23 @@ function browseDeck(deltaPx) {
   updateCanvasOffset();
 }
 
-function selectCard(cardId) {
-  const cards = [...deckCanvasEl.querySelectorAll('.card')];
-  cards.forEach((card) => card.classList.remove('selected'));
+function setPointedCard(cardId) {
   const card = deckCanvasEl.querySelector(`.card[data-id="${cardId}"]`);
   if (!card || card.classList.contains('pulled')) return;
 
-  card.classList.add('selected');
-  state.selectedCardId = cardId;
+  [...deckCanvasEl.querySelectorAll('.card.pointed')].forEach((item) => item.classList.remove('pointed'));
+  card.classList.add('pointed');
+  state.pointedCardId = cardId;
+}
+
+function lockCard(cardId) {
+  const card = deckCanvasEl.querySelector(`.card[data-id="${cardId}"]`);
+  if (!card || card.classList.contains('pulled')) return;
+
+  [...deckCanvasEl.querySelectorAll('.card.locked')].forEach((item) => item.classList.remove('locked'));
+  card.classList.add('locked');
+  state.lockedCardId = cardId;
+  statusText.textContent = `已锁定：${card.dataset.name}。请再次上滑以抽出此牌。`;
 }
 
 function pullCard(cardId) {
@@ -158,15 +174,18 @@ function pullCard(cardId) {
 
   const orientation = Math.random() > 0.5 ? '正位' : '逆位';
   card.classList.add('pulled');
-  card.classList.remove('selected');
+  card.classList.remove('pointed', 'locked');
 
   state.selectedCards.push({ name: card.dataset.name, orientation });
+  state.pointedCardId = null;
+  state.lockedCardId = null;
   renderSelectedCards();
 
   if (state.selectedCards.length === state.drawCount) {
     statusText.textContent = '抽牌完成，请点击“生成解读”。';
     finishBtn.disabled = false;
-    state.selectedCardId = null;
+  } else {
+    statusText.textContent = `已抽出 ${state.selectedCards.length}/${state.drawCount} 张。请继续指向并上滑锁定。`;
   }
 }
 
@@ -234,7 +253,7 @@ async function initCameraGesture() {
     });
 
     await camera.start();
-    gestureStateEl.textContent = '摄像头状态：已连接，左右滑手掌可浏览牌阵。';
+    gestureStateEl.textContent = '摄像头状态：已连接。指向=预览，第一次上滑=锁定，第二次上滑=抽牌。';
   } catch (error) {
     gestureStateEl.textContent = '摄像头状态：无法访问摄像头，请检查浏览器权限。';
     console.error(error);
@@ -248,10 +267,14 @@ function handlePalmSwipe(currentX) {
   }
 
   const diff = currentX - state.lastPalmX;
-  if (Math.abs(diff) > 0.09) {
-    browseDeck(diff > 0 ? -220 : 220);
-    state.lastPalmX = currentX;
+  const deadZone = 0.008;
+
+  if (Math.abs(diff) > deadZone) {
+    const speed = Math.max(-95, Math.min(95, diff * -1800));
+    browseDeck(speed);
   }
+
+  state.lastPalmX = currentX;
 }
 
 function handleFingerPoint(currentX, currentY) {
@@ -276,8 +299,8 @@ function handleFingerPoint(currentX, currentY) {
     }
   });
 
-  if (best && bestDistance < 110) {
-    selectCard(best.dataset.id);
+  if (best && bestDistance < 115) {
+    setPointedCard(best.dataset.id);
   }
 }
 
@@ -289,8 +312,13 @@ function handleUpSwipe(currentY) {
 
   const now = Date.now();
   const diff = state.lastFingerY - currentY;
-  if (diff > 0.12 && now - state.lastUpSwipeAt > 850 && state.selectedCardId !== null) {
-    pullCard(state.selectedCardId);
+  if (diff > 0.11 && now - state.lastUpSwipeAt > 550) {
+    if (state.lockedCardId !== null) {
+      pullCard(state.lockedCardId);
+    } else if (state.pointedCardId !== null) {
+      lockCard(state.pointedCardId);
+    }
+
     state.lastUpSwipeAt = now;
   }
 
@@ -299,7 +327,11 @@ function handleUpSwipe(currentY) {
 
 window.addEventListener('keydown', (event) => {
   if (!drawScreen.classList.contains('active')) return;
-  if (event.key === 'ArrowLeft') browseDeck(-180);
-  if (event.key === 'ArrowRight') browseDeck(180);
-  if (event.key === 'ArrowUp' && state.selectedCardId !== null) pullCard(state.selectedCardId);
+
+  if (event.key === 'ArrowLeft') browseDeck(-200);
+  if (event.key === 'ArrowRight') browseDeck(200);
+  if (event.key === 'ArrowUp') {
+    if (state.lockedCardId !== null) pullCard(state.lockedCardId);
+    else if (state.pointedCardId !== null) lockCard(state.pointedCardId);
+  }
 });
